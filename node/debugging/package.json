@@ -1,0 +1,12 @@
+{
+  "name": "debugging",
+  "version": "1.0.0",
+  "description": "",
+  "main": "debugging.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "debug": "cross-env DEBUG=\"*\" npm run start"
+  },
+  "author": "",
+  "license": "ISC"
+}

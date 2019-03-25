@@ -1,0 +1,21 @@
+{
+  "name": "node_express_handin",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "debug": "^4.1.1",
+    "express": "^4.16.4",
+    "fs": "^0.0.1-security",
+    "nodemon": "^1.18.10",
+    "pug": "^2.0.3"
+  },
+  "devDependencies": {},
+  "description": ""
+}
