@@ -11,7 +11,8 @@ app.set('views', __dirname + '/views') //set a directory to look for views
 app.use(express.static(__dirname + '/views')) // middleware that serves static files from a directory
 
 app.get("", (req, res) => {
-    res.render("index.ejs", {msg: ""})
+    
+    res.render("index.ejs", {msg: ""}) //need .ejs to specify engine
 })
 app.post("", (req, res) => {
     const {greeting} = req.body;

@@ -1,0 +1,48 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Security Presentation - Index</title>
+</head>
+
+<body>
+        <p> <% if(msg) { %> <%= msg %> <% } %> </p>
+        <p>search for a persons name, create a person, update first persons in db's name or delete person by name.</p>
+        <div>
+           <select id="select">
+              <option value="get" selected="selected">get</option>
+              <option value="post">post</option>
+              <option value="put">put</option>
+              <option value="delete">delete </option>
+           </select> 
+            <input id="input" type="text" placeholder="search, delete and update"></input>
+            <input id="update" type="text" placeholder="updated value"></input>
+
+            <input id="submitButton" type="button" value="submit"></input>
+        </div>
+        <textarea id="persons"></textarea>
+</body>
+<script>
+ var button = document.querySelector("#submitButton");
+ console.log(button)
+ button.addEventListener("click", function(){
+    const value = document.querySelector("#select").value;
+    const httpMethod = value === "get" ? "get" : "post";
+    const url = httpMethod === "get" ? `http://localhost:3001/${value}?name=${document.querySelector("#input").value}` : `http://localhost:3001/${value}`
+    const Http = new XMLHttpRequest();
+    Http.open(`${httpMethod}`, url);
+    if(httpMethod === "get"){
+        Http.send();
+    } else if (value === "put"){
+        Http.send(JSON.stringify({originalValue:document.querySelector("#input").value, updatedValue:document.querySelector("#update").value}))
+    }else {
+        Http.send(document.querySelector("#input").value);
+    }
+    Http.onload = function() {
+     alert(Http.response); 
+    };
+ })
+</script>
+</html>
