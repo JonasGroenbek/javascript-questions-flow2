@@ -1,24 +1,14 @@
-const express = require("express")
-const app = express();
-const bodyParser = require("body-parser");
+const express = require("express");
+let app = express();
+const pug = require('pug');
+const PORT = 12345
+app.set('view engine', 'pug')
 
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
+app.get('/', function (req, res) {
+    res.render('pug', { title: 'Hey', message: 'Hello there!' })
+  })
 
-app.engine('.ejs', require('ejs').__express); //set template engine
-app.set('views', __dirname + '/views') //set a directory to look for views
-app.use(express.static(__dirname + '/views')) // middleware that serves static files from a directory
-
-app.get("", (req, res) => {
-    
-    res.render("index.ejs", {msg: ""}) //need .ejs to specify engine
-})
-app.post("", (req, res) => {
-    const {greeting} = req.body;
-    res.render("index.ejs", {msg: greeting})
+app.listen(PORT, function(){
+    console.log(`listening on prot: ${PORT}`)
 })
 
-app.listen(3000, () => {
-
-})
