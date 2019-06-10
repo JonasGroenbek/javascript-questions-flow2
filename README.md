@@ -174,34 +174,151 @@ expect(result).to.be.eql('Hello')
 ### Explain, preferably using an example, how you have deployed your node/Express applications, and which of the Express Production best practices you have followed.
 Previously I have used nginx as a reverse proxy and node.js for my backend. Express has listed all of the best practices for production here
 https://expressjs.com/en/advanced/best-practice-performance.html. I have done the following
-* Used asynchronous functions exclusively.
-* Used a reverse-proxy
-* Used PM2 for auto-restart should the server crash
+* Used asynchronous functions exclusively to improve performance
+* Used nginx as a reverse proxy
+* Used a process manager to handle crashes
+* Used up to date packages
+* Hashing passwords
+* Use a cloud-based solution to handle my databse - they handle security to some extend
+* Use TLS
+
+This is my config file for nginx
+
+```
+server {
+  root /var/www/jonasgroenbek.com/build;
+  index index.html;
+  server_name jonasgroenbek.com  www.jonasgroenbek.com;
+  location / {
+    try_files $uri $uri/ /index.html  $uri/ =404;
+  }
+    listen [::]:443 ssl ipv6only=on; # managed by Certbot
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/jonasgroenbek.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/jonasgroenbek.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+    location /play {
+            rewrite /play/(.*)  /$1 break;
+            proxy_pass http://localhost:1234;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_cache_bypass $http_upgrade;
+        }
+}
+```
 
 # NoSQL, MongoDB and Mongoose
 
 ### Explain, generally, what is meant by a NoSQL database.
-A NoSQL database stands for not only SQL, and refers to non-relational databases. This means that NoSQL databases does not have to be anything alike. We have previously used MongoDB which stores data in documents in key-value pairs in a JSON like format instead of the SQL table, row and
-columns approach. 
+A NoSQL database stands for not only SQL, and refers to non-relational databases. This means that NoSQL databases does not have to be anything alike each other.
+he term NoSQL encompasses a large number of different database approaches. The one common component, is that they all differ from relational databases. We have previously used MongoDB which stores data in documents in key-value pairs in a JSON like format instead of the SQL table, rows and columns approach. 
+
+>[Relational databases] organizes data into one or more tables (or "relations") of columns and rows, with a unique key identifying each row. Rows are also called records or tuples. > Columns are also called attributes. Generally, each table/relation represents one "entity type" (such as customer or product). The rows represent instances of that type of entity (such > as "Lee" or "chair") and the columns representing values attributed to that instance (such as address or price).
 
 ### Explain Pros & Cons in using a NoSQL database like MongoDB as your data store, compared to a traditional Relational SQL Database like MySQL.
 MongoDB is a schemaless database, that means that a MongoDB collection which is roughly the equivalent of a table in MySQL has no strict schema.
-This has the pro of eliminating empty columns but introduces the con of inconsistency. If not scaled correctly it can become unreliable.c 
+This has the pro of eliminating empty columns but introduces the con of inconsistency. If not scaled correctly it can become unreliable.
+
+Pros
+* Flexible Data Model. Unlike relational databases, NoSQL databases easily store and combine any type of data, both structured and unstructured. You can also dynamically update the schema to evolve with changing requirements and without any interruption or downtime to your application.
+* Elastic Scalability. NoSQL databases scale out on low cost, commodity hardware, allowing for almost unlimited growth.
+* Simplicity. NoSQL databases may be more simple to get up and running.
+Cons
+* With a NoSQL datastore, you have to code the integrity mechanisms into your application. As a rule, they’re simple key=value stores; nothing in the way the data is structured or stored imposes any logical consistency (across tables).
 
 
 ### Explain reasons to add a layer like Mongoose, on top on of a schema-less database like MongoDB
-An application can benefit from the reliability of the data-validation a schema layer like mongoose gives.
+Even though a schema-less database could have some advantages, most projects benifit from the data validation and integrity that comes with having a schema. As a developer, you still retain the benifits of a schema-less database, since mongoose schema valition can be applied to a subset of all your Models.
+
+Mongoose provides all the simple datatypes defined in ECMAScript, along with validation of sub-documents. Mongoose also provides static methods for querying the models.
+
+```js
+Model.deleteMany()
+Model.deleteOne()
+Model.find()
+Model.findById()
+Model.findByIdAndDelete()
+Model.findByIdAndRemove()
+Model.findByIdAndUpdate()
+Model.findOne()
+Model.findOneAndDelete()
+Model.findOneAndRemove()
+Model.findOneAndUpdate()
+Model.replaceOne()
+Model.updateMany()
+Model.updateOne()
+```
 
 ### Explain about indexes in MongoDB, how to create them, and demonstrate how you have used them.
-Indexing in monbodb means to index certain data for faster search times. If not done, a query might end up scanning the whole collection for a single document.
+Indexing in monbodb means to index certain data for faster search times. 
+> Indexes support the efficient execution of queries in MongoDB. Without indexes, MongoDB must perform a collection scan, i.e. scan every document in a collection, to select those documents that match the query statement. If an appropriate index exists for a query, MongoDB can use the index to limit the number of documents it must inspect.
+
+There are various types of indexes that can be applied:
+
+* Single Field indexes are applied to a single field on some document.
+* Compound indexes are applied to multiple fields at the same time. An example of usage could be uniqueness accross multiple fields.
+* Multikey indexes are applies to array values in documents. Applying an index to Person.address of type [String] would mean that an index is created for all the addresses.
 
 ### Explain, using your own code examples, how you have used some of MongoDB's "special" indexes like TTL and 2dsphere
 Denormalization is when you edit content of a database to not be the best practise, but makes sense in your use-case. 
-* 2dsphere is an index converts the data to GeoJSON Point.
 * ttl index expires documents after a certain amount of seconds.
 
+Demonstration of Thomas implementation of ttl
+```js
+const SECONDS = 1;
+const EXPIRES = 60 * SECONDS;
+
+export const UserPositionSchema = new Schema({
+    user: {type: Schema.Types.ObjectId, ref: "User", required: true},
+    created: {type: Date, expires: EXPIRES, default: Date.now},
+    position: ...
+});
+```
+
+>Using mongoose, i defined a Schema to represent the position of a user. I added the expires property to the created field of the Schema. The value of the expires property is the number of seconds the document lives for (60).
+
+The equivalent index could be added using plain Mongo like so:
+```
+db.userPositions.createIndex( 
+    { "created": 1 }, 
+    { expireAfterSeconds: EXPIRES })
+```
+
+* 2dsphere is an index converts the data to GeoJSON Point.
+
+>A 2dsphere index supports queries that calculate geometries on an earth-like sphere. 2dsphere index supports all MongoDB geospatial queries: queries for inclusion, intersection and proximity. For more information on geospatial queries, see Geospatial Queries.
+
+types 2dsphere supports:
+* Version 2 and later 2dsphere indexes includes support for additional GeoJSON object: MultiPoint, MultiLineString, MultiPolygon, and GeometryCollection. For details on all supported GeoJSON objects, see GeoJSON Objects.
+
+```js
+export const UserPositionSchema = new Schema({
+    ...
+    position: {
+        type: {
+            type: String,
+            enum: ["Point"],
+            default: "Point",
+        },
+        coordinates: {
+            type: [Schema.Types.Number]
+        }
+    }
+});
+
+
+UserPositionSchema.index({ position: "2dsphere" });
+```
+
+Above i used the mongoose schema definition strategy to add the 2dshere to the position field. The type of the position field matches syntax of the GeoJson Point data type.
+
 ### Demonstrate, using a REST-API you have designed, how to perform all CRUD operations on a MongoDB
-I have designed a rest api and with all four crud operations it is in mongodb/crud and mongodb/restApi folders
+
+I have two folders in this repo that does so, one with a frontend using server-side rendering and a stand-alone rest-api
 
 ### Explain the benefits of using Mongoose, and demonstrate, using your own code, an example involving all CRUD operations
 The benefits of using mongoose is that it has schemas, validation and instance methods which i demonstrate together with CRUD operations together with a rest api in the mongodb
@@ -217,6 +334,14 @@ Four: Don’t be afraid of application-level joins: if you index correctly and u
 Five: Consider the write/read ratio when denormalizing. A field that will mostly be read and only seldom updated is a good candidate for denormalization: if you denormalize a field that is updated frequently then the extra work of finding and updating all the instances is likely to overwhelm the savings that you get from denormalizing.
 Six: As always with MongoDB, how you model your data depends – entirely – on your particular application’s data access patterns. You want to structure your data to match the ways that your application queries and updates it.
 >
+
+When using normalization, we have to perform a JOIN to retrieve the relationship between Book and Author. This incurs a performance penalty. We could of course embed one entity into the other, but this would also come with some serious drawbacks. We can no longer effeciently perform search on the embedded document Author, since we would first need to iterate through all the parent documents (Book).
+
+We would also have lots of duplicate data. If we embedded the Author entity inside the Book entity, we many have multiple Author records representing the same author. If we wanted to update that author, we would need to update the information in multiple Book documents.
+
+A real example could be if the position of a Post is denormalized and the position of a User is normalized, and the positional data has been extracted out into the UserPosition collection.
+
+
 ### Demonstrate, using your own code-samples, decisions you have made regarding → normalization vs denormalization 'Consider the following model:
 
 ```
@@ -235,3 +360,7 @@ When using normalization, we have to perform a JOIN to retrieve the relationship
 We would also have lots of duplicate data. If we embedded the inhabitants entity inside the houses entity, we many have multiple inhabitants records representing the same inhabitant. If we wanted to update that inhabitant, we would need to update the information in multiple houses documents.
 
 The tradeoff between embedding and not embedding is fast read vs fast write.
+
+#Explain, using a relevant example, a full JavaScript backend including relevant test cases to test the REST-API.
+
+jonasgroenbek.com
