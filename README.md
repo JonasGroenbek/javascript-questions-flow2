@@ -33,37 +33,45 @@ This obviously introduces performance enhancement but also stability. Should you
 
 ### Explain briefly how to deploy a Node/Express application including how to solve the following deployment problems:
 * ##### Ensure that you Node-process restarts after a (potential) exception that closed the application
+    PM2 does this out of the box, and it has watch options to include should you want to restart on specific file-change.
 * ##### Ensure that you Node-process restarts after a server (Ubuntu) restart
+    PM2 can be given a "startup hook" specified in their documentation
+    ```Bash
+    sudo su -c env PATH=$PATH:/home/unitech/.nvm/versions/node/v4.3/bin pm2 startup <distribution> -u <user> --hp <home-path>
+    ```
 * ##### Ensure that you can take advantage of a multi-core system
+    You can ensure to take advantage of multiple cores with cluster.js. You can run more than one server on a nginx-reverse proxy as a load balancer.
 * ##### Ensure that you can run “many” node-applications on a single droplet on the same port (80)
-The following use-cases can be done with a process manager.
-Node-processes can be run as a service with PM2. PM2 will handle restarting your node application should it fail. You can also create a startup script running the node server as a service on startup. 
-You can ensure to take advantage of multiple cores with cluster.js. You can run more than one server on a nginx-reverse proxy as a load balancer.
-Explain the difference between “Debug outputs” and application logging. What’s wrong with console.log(..) statements in our backend-code.
-Debug output is like an augmented version of console.log, but unlike console.log, you don’t have to comment out debug logs in production code. Logging is turned off by default and can be conditionally turned on by using the DEBUG environment variable.
+    The following use-cases can be done with a process manager.
+    Node-processes can be run as a service with PM2. PM2 will handle restarting your node application should it fail. You can also create a startup script running the node server as a service on startup. 
 
 ### Explain the difference between “Debug outputs” and application logging. What’s wrong with console.log(..) statements in our backend-code.
 
 The problem with using console.log is that the output cannot easily be disabled when deployed to a production environment. Since console.log is a blocking call, the impact on the performance of the application will suffer.
+Debug output is like an augmented version of console.log, but unlike console.log, you don’t have to comment out debug logs in production code. Logging is turned off by default and can be conditionally turned on by using the DEBUG environment variable.
 
 The debug package exposes a function that can be used to print debugging messages.
 ```js
 const a = require('debug')('a') // Creates a debug function with the name a
-const b = require('debug')('b') // Creates a debug function with the name b
 const c = require('debug')('c') // Creates a debug function with the name c
 
 a('Printed by a')
 b('Printed by b')
 c('Printed by c')
-
-const a = require('debug')('name:a') //activates A
 ```
+If you then run the script with 
+```bash
+    DEBUG=a node file.js
+ ```
+ the a debug statements will be printed
 
 These messages can easily be enabled or disabled based on the DEBUG environment variable.
 
+Furthermore console.log in client side can pose some security risks. It is expensive CPU wise to console.log() inside of loops as well.
+
 ### Demonstrate a system using application logging and “coloured” debug statements.
 
-TODO
+Done under the debugging folder
 
 ### Explain, using relevant examples, concepts related to testing a REST-API using Node/JavaScript + relevant packages 
 Concepts specifically relevant for testing a REST-API would be;
@@ -82,6 +90,9 @@ Popular express middleware examples would be:
 * debug
 
 ### Explain, using relevant examples, how to implement sessions and the legal implications of doing this.
+
+Sessions have information stored on the server, and gives the client a token to retrieve their rightful session. This means that the data relevant for the functioning of the 
+application is stored on the server.
 
 Sessions can easily be implemented using the express-session middleware. This middleware adds a cookie to the response. This cookie contains the session-id of the user. A session property is then added to the request object provided to the express middleware and routes.
 
@@ -106,6 +117,10 @@ The session middleware has multiple strategies for session storage. The default 
 
 Warning The default server-side session storage, `MemoryStore, is purposely not designed for a production environment. It will leak memory under most conditions, does not scale past a single process, and is meant for debugging and developing.
 
+legal implications must be according to the GDPR, using cookies must inform users. Furthermore if you store any permanent data. The users have to be informed.
+
+It is a legal requirement for websites to comply with countries governing privacy laws. Cookies are downloaded and stored to your computer when you visit a website. It allows a website to store data locally on a clients machine for faster processing, rather then downloading it each and every-time the website is viewed or loaded.
+
 ### Compare the express strategy toward (server side) templating with the one you used with Java on second semester.
 A template engine enables you to use dynamic template files in your application. At runtime, the template engine replaces variables in a template file with actual values, and transforms the template into an HTML file sent to the client. This approach makes it easier to design dynamic HTML content.
 In second semester, we used servlets. We wrote HTML as strings, from the servlets HTTP methods equivalent response objects PrintWriter. This is highly prone to error, since dynamic use is fragile and escaping the strings each time variables needs to be represented are needed. 
@@ -116,7 +131,16 @@ In our fourth semester we have been introduced to two template engines, pug and 
 This is demonstrated in the templating folder
 
 ### Explain, using relevant examples, your strategy for implementing a REST-API with Node/Express and show how you can "test" all the four CRUD operations programmatically using, for example, the Request package.
-The project can be found at rest-api-test-example. The assertions are made using the chai testing framework. The requests to the server are made using the chai-http library. The tests are run using the mocha library, using the npm test script.
+The project can be found at ![CRUD-aoo](/restCrudTemplate/test) The assertions are made using the chai testing framework. The requests to the server are made using the chai-http library. The tests are run using the mocha library, using the npm test script.
+```js
+chai.request(app)
+  .get('/')
+```
+When passing an app to request; it will automatically open the server for incoming requests (by calling listen()) and, once a request has been made the server will automatically shut down (by calling .close()). If you want to keep the server open, perhaps if you’re making multiple requests, you must call .keepOpen() after .request(), and manually close the server down:
+
+cp - 28j!
+mongo "mongodb+srv://gettingstarted-upvoz.mongodb.net/test" --username jonasgroenbek
+ Copy -!
 
 ### Explain, using relevant examples, about testing JavaScript code, relevant packages (Mocha etc.) and how to test asynchronous code.
 Testing code is always important when developing software. But one could argue that testing JavaScript is even more useful than testing statically types languages like Java or C#.

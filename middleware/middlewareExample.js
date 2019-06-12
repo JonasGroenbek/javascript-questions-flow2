@@ -2,18 +2,19 @@ const express = require("express")
 const cors = require("cors");
 const PORT = 12345;
 let app = express();
+
 app.use(function (req, res, next) {
     console.log('Time:', Date.now())
     next()
 })
 
-app.use(cors(
+app.use(cors( //sets the origin able to access sites to be localhsot.
     {
         origin: 'http://localhost'
     }
 ))
 
-app.use('/method', function (req, res, next) {
+app.use('/method', function (req, res, next) { 
     console.log('Request Type:', req.method)
     next()
 })

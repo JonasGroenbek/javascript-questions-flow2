@@ -13,10 +13,10 @@ personSchema.statics.create =
         return new Promise(function (resolve, reject) {
             const PersonModel = self.model("persons");
             let pers = new PersonModel(person);
-            pers.save(function(err, res){
-                if(err){
+            pers.save(function (err, res) {
+                if (err) {
                     reject(err)
-                } 
+                }
                 resolve(res)
             })
         })
@@ -48,7 +48,7 @@ personSchema.statics.delete =
     function (id) {
         const self = this;
         return new Promise(function (resolve, reject) {
-            self.model("persons").findOneAndRemove(id, function(err, res) {
+            self.model("persons").findOneAndRemove(id, function (err, res) {
                 if (err) {
                     reject(err)
                 }

@@ -5,8 +5,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 PORT = 3001
 
-app.use(bodyParser.text({ type: "text/plain" })); //for recieving unformatted string bodies.
-
+app.use(bodyParser.json()); //for recieving unformatted string bodies.
 app.engine('.ejs', require('ejs').__express); //set template engine
 app.set('views', __dirname + '/views') //set a directory to look for views
 app.use(express.static(__dirname + '/views')) // middleware that serves static files from a directory
@@ -30,42 +29,56 @@ app.get("/get", function (req, res) {
 })
 
 app.post("/post", (req, res) => {
-    if (req.body.length < 1) {
-        res.send("please provide a name of atleast 1 character")
+    if (req.body.name < 1) {
+        res.status(203).send("please provide a name, with more than one character")
     } else {
-        const person = new PersonModel({ name: req.body });
+        const {name} = req.body;
+        const person = new PersonModel({ name: name });
         person.save(function (err) {
-            if (err) res.send("something went wrong!");
-            res.send(`${req.body} is created.`)
-        });
-    }
-})
-
-app.post("/put", (req, res) => {
-    if (req.body.length < 1) {
-        res.send("please provide a name of atleast 1 character")
-    } else {
-        const {originalValue, updatedValue} = JSON.parse(req.body);
-        PersonModel.findOneAndUpdate({ name: originalValue }, { $set: { name: updatedValue } }, { new: true }, (err, doc) => {
-            if (err) {
-                res.end("something went wrong, perhaps the user did not exist!")
+            if (err) res.status(500).send("something went wrong!")
+            else {
+                res.status(201).send(`${name} is created.`)
             }
-            res.send(`${originalValue} is now changed. ${doc} is updated`)
         });
     }
 })
 
-app.post("/delete", (req, res) => {
-    PersonModel.remove({name: req.body}, function(err, countRemoved){
-        if(countRemoved === 0 || err){
-            res.send("zero documents removed")
-        } else {
-            res.send("succesfully removed document!")
-        }
-    })
-
+app.put("/put", (req, res) => {
+    const {originalValue, updatedValue} = req.body;
+    if (!req.body.originalValue || !req.body.updatedValue) {
+        res.send("name or update value is not defined")
+    } else {
+        const {originalValue, updatedValue} = req.body;
+        PersonModel.findOneAndUpdate({ name: originalValue }, { $set: { name: updatedValue } }, { new: true }, (err, doc) => {
+            if (err || doc === null) {
+                res.status(203).send("something went wrong, perhaps the user did not exist!")
+            } else {
+                res.status(201).send(`${originalValue} is now changed. name is now ${updatedValue}`)
+            }
+            
+        });
+    }
 })
+
+
+app.delete("/delete", (req, res) => {
+    const {name} = req.body;
+    PersonModel.deleteOne({name:name}, function(err, countRemoved){
+        if(err){
+            res.status(400).send("bad request")
+        }else {
+            if(countRemoved === 0){
+                res.status(200).send("zero documents removed")
+            } else {
+                res.status(200).send("succesfully removed!")
+            }
+        }
+
+    })
+})
+
+
 
 app.listen(PORT)
 
-module.export = app;
+module.exports = app;
